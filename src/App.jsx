@@ -5,6 +5,7 @@ import Heart from './assets/Heart'
 
 
 function getUniqueBreeds(data) {
+
   const uniqueBreeds = []
   const uniquePics = data.filter(pic => {
     const breed = pic.split("/")[4];
@@ -22,40 +23,54 @@ function App() {
     points: 0,
     lifes: 0,
     timeRemaining: 0,
-    highScore: 0,
+    highScore: Number(localStorage.getItem("highScore")) || 0,
     currentQuestion: null,
     playing: false,
     fetchCount: 0
   })
   const ReqController = new AbortController()
 
-  const decreaseTime = (d) => {
-    console.log("inside interval")
-    console.log(gameData.timeRemaining)
-    console.log(d)
-    if(gameData.timeRemaining <= 0) setgameData(e => ({...e, playing: false, hemlo: "melooo" }))
-    if(gameData.timeRemaining >= 0) {
-      console.log("skiped")
-      return setgameData(e => ({...e, timeRemaining: e.timeRemaining - 1}))  
-      
-    }      
-  }
+  useEffect(() => {
+    if(collection.length){
+      collection.slice(0, 8).forEach(img => {
+        new Image().src = img
+      })
+    }
+  },[collection])
 
   const timer = useRef(null)
   useEffect(()=> {
       if(gameData.playing) {
-        console.log("set interval runed")
-        console.log(`time is : ${gameData.timeRemaining}`)
         timer.current = setInterval(() => {
-          decreaseTime(gameData.timeRemaining); 
+          //decreaseTime(gameData.timeRemaining); 
+          setgameData(e => ({...e, timeRemaining: e.timeRemaining - 1}))
         }, 1000);
       }
-
       return () => {
-        console.log("set interval cleared")
         clearInterval(timer.current);
       }
   }, [gameData.playing])
+
+  const checkHighScore = () => {
+    console.log("check highscore runed")
+    if(gameData.highScore < gameData.points){
+      console.log(`high score is : ${gameData.points}`)
+      setgameData(e=> ({...e, highScore: e.points}))
+      localStorage.setItem("highScore", gameData.points)
+    }   
+  }
+
+  //to check if remaining time is less then or = 0
+  useEffect(()=> {
+    if(!gameData.playing) return
+    if(gameData.timeRemaining <= 0){
+      console.log("stoping")
+      clearInterval(timer.current)
+      setgameData(e => ({...e, playing: false}))
+      checkHighScore()
+    }
+    
+  },[gameData.timeRemaining, gameData.playing])
 
   const generateQuestion = () => {
     if(collection.length <= 4){
@@ -63,11 +78,10 @@ function App() {
     }
 
     setCollection(c => c.slice(4, c.length))
-    console.log(collection.length)     
     const Random = Math.floor(Math.random() * 4)
     console.log(`ans is : ${Random + 1}`)
     const fourItems = collection.slice(0,4)
-    const tempdata = {bread: fourItems[Random].split("/")[4], photos: fourItems,answer: Random}
+    const tempdata = {bread: fourItems[Random]?.split("/")[4], photos: fourItems,answer: Random}
     return tempdata
   }
 
@@ -79,26 +93,26 @@ function App() {
   const checkAns = (index) => {
     if(!gameData.playing) return
 
-    if(gameData.lifes > 2)
+    if(gameData.lifes >= 2)
       {
-        return setgameData({...gameData, playing: false})
+        console.log("me runeddd")
+        setgameData(e => ({...e, playing: false}))
+        checkHighScore()  
       }
 
     if(gameData.currentQuestion?.answer === index){
       setgameData(e => ({...e, points: e.points+1, currentQuestion: generateQuestion()}))
-      console.log("true")
-      console.log(gameData)
+
     } else {
       setgameData(e => ({...e, lifes: e.lifes + 1 }))
-      console.log("false")
-      
-      
+
     }
   }
 
 
   
   useEffect(() => {
+
     async function GetData (){
       try {
         const res = await fetch("https://dog.ceo/api/breeds/image/random/10", {signal: ReqController.signal});
@@ -110,7 +124,7 @@ function App() {
       }
     }
     GetData();
-    // return () => {
+    // return () => { 
     //   ReqController.abort();
     // }
   },[gameData.fetchCount])
@@ -134,11 +148,10 @@ function App() {
             })}
           </p>
           <h1 className="font-bold text-4xl pb-10 pt-2 md:text-7xl">{gameData.currentQuestion.bread}</h1>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 px-5">
+          <div className="grid grid-cols-2  lg:grid-cols-4 gap-5 px-5 " style={{padding: "0px", margin: "0px"}}>
             {gameData.currentQuestion.photos.map((photo, index) => {
               return <div onClick={() => checkAns(index)} key={index} className="rounded-lg h-40 lg:h-80 bg-cover bg-center w-48" style={{backgroundImage: `url(${photo})`}}></div>
             })}
-            <button onClick={() => startGame()}>reset</button>
           </div>
         </>
       }
@@ -152,7 +165,7 @@ function App() {
 
 
 
-      {gameData.timeRemaining <= 0 || gameData.lifes >= 3 && gameData.currentQuestion && 
+      {(gameData.timeRemaining <= 0 || gameData.lifes >= 3) && gameData.currentQuestion && 
       (
         
         <div className="fixed top-0 bottom-0 right-0 left-0 bg-black/90 text-white flex items-center justify-center">
@@ -160,6 +173,8 @@ function App() {
             {gameData.lifes >= 3 && <p className="text-4xl font-bold my-5">Game Over</p>}
             {gameData.timeRemaining <= 0 && <p className="text-4xl font-bold">Time Over</p>}
             <p> Your Score is : {gameData.points}</p>
+            <p> Your High Score is : {gameData.highScore}</p>
+
             <button className="text-white bg-gradient-to-b from-green-500 to-green-800 px-5 py-4 rounded text-xl font-bold my-4" onClick={() => startGame()}>Play Again</button>
           </div>     
 
