@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import reactLogo from './assets/react.svg'
 import './App.css'
 import Heart from './assets/Heart'
@@ -29,6 +29,34 @@ function App() {
   })
   const ReqController = new AbortController()
 
+  const decreaseTime = (d) => {
+    console.log("inside interval")
+    console.log(gameData.timeRemaining)
+    console.log(d)
+    if(gameData.timeRemaining <= 0) setgameData(e => ({...e, playing: false, hemlo: "melooo" }))
+    if(gameData.timeRemaining >= 0) {
+      console.log("skiped")
+      return setgameData(e => ({...e, timeRemaining: e.timeRemaining - 1}))  
+      
+    }      
+  }
+
+  const timer = useRef(null)
+  useEffect(()=> {
+      if(gameData.playing) {
+        console.log("set interval runed")
+        console.log(`time is : ${gameData.timeRemaining}`)
+        timer.current = setInterval(() => {
+          decreaseTime(gameData.timeRemaining); 
+        }, 1000);
+      }
+
+      return () => {
+        console.log("set interval cleared")
+        clearInterval(timer.current);
+      }
+  }, [gameData.playing])
+
   const generateQuestion = () => {
     if(collection.length <= 4){
       setgameData(e => ({...e, fetchCount: e.fetchCount + 1}))
@@ -37,6 +65,7 @@ function App() {
     setCollection(c => c.slice(4, c.length))
     console.log(collection.length)     
     const Random = Math.floor(Math.random() * 4)
+    console.log(`ans is : ${Random + 1}`)
     const fourItems = collection.slice(0,4)
     const tempdata = {bread: fourItems[Random].split("/")[4], photos: fourItems,answer: Random}
     return tempdata
@@ -44,7 +73,7 @@ function App() {
 
 
   const startGame = () => {   
-    setgameData(e => ({...e, playing : true, timeRemaining : 30, points : 0, strickes : 0, currentQuestion : generateQuestion() })) 
+    setgameData({...gameData, playing: true, timeRemaining: 10, points: 0, lifes: 0, currentQuestion : generateQuestion()}) 
   }
 
   const checkAns = (index) => {
@@ -125,6 +154,7 @@ function App() {
 
       {gameData.timeRemaining <= 0 || gameData.lifes >= 3 && gameData.currentQuestion && 
       (
+        
         <div className="fixed top-0 bottom-0 right-0 left-0 bg-black/90 text-white flex items-center justify-center">
           <div>
             {gameData.lifes >= 3 && <p className="text-4xl font-bold my-5">Game Over</p>}
