@@ -52,9 +52,7 @@ function App() {
   }, [gameData.playing])
 
   const checkHighScore = () => {
-    console.log("check highscore runed")
     if(gameData.highScore < gameData.points){
-      console.log(`high score is : ${gameData.points}`)
       setgameData(e=> ({...e, highScore: e.points}))
       localStorage.setItem("highScore", gameData.points)
     }   
@@ -64,7 +62,6 @@ function App() {
   useEffect(()=> {
     if(!gameData.playing) return
     if(gameData.timeRemaining <= 0){
-      console.log("stoping")
       clearInterval(timer.current)
       setgameData(e => ({...e, playing: false}))
       checkHighScore()
@@ -95,7 +92,6 @@ function App() {
 
     if(gameData.lifes >= 2)
       {
-        console.log("me runeddd")
         setgameData(e => ({...e, playing: false}))
         checkHighScore()  
       }
